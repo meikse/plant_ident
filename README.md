@@ -27,3 +27,9 @@ The cost function shall penalise the error between the state and its derivative.
 xhat_i is the (model + integrator) output 
 
 
+# TODO
+
+1. generate laggy (träges) noise signal, to simulate possible real input 
+done
+2. implement generator as class, and output it via a known ss system as reference for the nn
+.. then you should have train and test data, which can be generated with the input generator and the ss output

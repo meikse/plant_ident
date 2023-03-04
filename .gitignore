@@ -1,2 +1,5 @@
 ref/
 papers/
+old_files/
+__pycache__/
+
