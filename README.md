@@ -1,4 +1,4 @@
-# CTT-NN
+# plant_ident 
 crude Neural Network approach for a dynamical model identification
 
 # sources
@@ -33,3 +33,4 @@ xhat_i is the (model + integrator) output
 done
 2. implement generator as class, and output it via a known ss system as reference for the nn
 .. then you should have train and test data, which can be generated with the input generator and the ss output
+
