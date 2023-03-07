@@ -107,18 +107,18 @@ def import_csv(name = "input.csv"):
     return data
 
 
-def loadData(path, file):
-    with open((path / file).as_posix()) as file:
-        csv_data = DictReader(file, delimiter=',')    
-        # prepare dict with keys
-        columns = {key: [] for key in csv_data.fieldnames[:-2]}
-        for row in csv_data:
-            for fieldname in csv_data.fieldnames[:-2]: 
-                # get row value for key
-                value = float(row.get(fieldname))    
-                # store it in the dict
-                columns.setdefault(fieldname, []).append(value) 
-        return columns
+# def loadData(path, file):
+#     with open((path / file).as_posix()) as file:
+#         csv_data = DictReader(file, delimiter=',')    
+#         # prepare dict with keys
+#         columns = {key: [] for key in csv_data.fieldnames[:-2]}
+#         for row in csv_data:
+#             for fieldname in csv_data.fieldnames[:-2]: 
+#                 # get row value for key
+#                 value = float(row.get(fieldname))    
+#                 # store it in the dict
+#                 columns.setdefault(fieldname, []).append(value) 
+#         return columns
 
 # def writeData(path, file):
 #     with open((path / file).as_posix(),"w") as file:

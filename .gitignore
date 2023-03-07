@@ -3,3 +3,5 @@ papers/
 old_files/
 __pycache__/
 
+test.csv
+train.csv
