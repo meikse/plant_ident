@@ -13,7 +13,7 @@ class InputGenerator:
     data '''
     
     def __init__(self, length) -> None:
-        '''init and storafe of random data points. y data is random between 0-1.
+        '''init and storage of random data points. y data is random between 0-1.
         x data is randomly incrementing. x and y values are stores in "data" 
         :length: amount of values on the x-axis'''
         x = 0 
@@ -106,52 +106,80 @@ def import_csv(name = "input.csv"):
             data.append(i)
     return data
 
+# -----------------------------------------------------------------------------
 
-# def loadData(path, file):
-#     with open((path / file).as_posix()) as file:
-#         csv_data = DictReader(file, delimiter=',')    
-#         # prepare dict with keys
-#         columns = {key: [] for key in csv_data.fieldnames[:-2]}
-#         for row in csv_data:
-#             for fieldname in csv_data.fieldnames[:-2]: 
-#                 # get row value for key
-#                 value = float(row.get(fieldname))    
-#                 # store it in the dict
-#                 columns.setdefault(fieldname, []).append(value) 
-#         return columns
-
-# def writeData(path, file):
-#     with open((path / file).as_posix(),"w") as file:
-#         csv_data = writer(file, delimiter=',')    
-#         # prepare dict with keys
-#         columns = {key: [] for key in csv_data.fieldnames[:-2]}
-#         for row in csv_data:
-#             for fieldname in csv_data.fieldnames[:-2]: 
-#                 # get row value for key
-#                 value = float(row.get(fieldname))    
-#                 # store it in the dict
-#                 columns.setdefault(fieldname, []).append(value) 
-#         return columns
+from torch.nn import Module, Sequential, Linear, Sigmoid
 
 class Logistic(Module):
-
-    def __init__(self):
-        super().__init__()
-        self.model = Sequential(Linear(1, 10),
-                                Sigmoid(),
-                                Linear(10,100),
-                                Sigmoid(),
-                                Linear(100,1)
-                                )
-        
-    def forward(self, xb):
-        # here numeric integrator
-        return self.model(xb) 
-
-
-def RMS(y, yhat):
-    return torch.sqrt(torch.abs(y - yhat)**2)
-
-def costFunc(xhat_i, xhat, dt, yhat, y, alpha):
-    return torch.mean((yhat-y)**2)-(1/alpha)*torch.mean((xhat_i-xhat)**2)*dt
+   
+    def __init__(self, n_x, n_u, n_feat=[40,40,40]):
+        '''
+        n_u: number of inputs
+        n_x: number of states 
+        n_fest: number of neurons per layer of the state mapping function
+        '''
+        super(Logistic, self).__init__()
+        self.net = Sequential(
+            Linear(n_x + n_u, n_feat[0]),  # 2 states, 1 input
+            Sigmoid(),
+            Linear(n_feat[0], n_feat[1]),
+            Sigmoid(),
+            Linear(n_feat[1], n_feat[2]),
+            Sigmoid(),
+            Linear(n_feat[2], n_x),         # n_x since states=output
+            )
     
+    def forward(self, X,U):
+        '''is not called directly, optimizer is calling it implicitly'''
+        # concatenate inputs and stated for passing them once into the net
+        XU = torch.cat((X,U),-1)
+        # i guess it does not matter passing them concatenated into the net
+        DX = self.net(XU)
+
+        return DX
+    
+
+class INN:
+    
+    def __init__(self, nn_model):
+        # pass net to this class
+        self.nn_model = nn_model
+
+    def INN_est(self, X_est,U,dt):
+
+        # pass u and x_head into N_f (Fig. 1) dot_x_head 
+        X_est_torch = self.nn_model(X_est.float(),U.float())
+        # integrate via cumulative sum of all previous estimated x_i
+        X_sum = torch.cumsum(X_est_torch, dim=0) # integrator
+        # first row will be extracted
+        # x0=X_est[0,:]
+        x0=X_est[0]
+        # adding initial state -> x_0
+        xdot_int=torch.add(x0,dt*X_sum)
+
+        return xdot_int
+
+# def fit(loader, net, loss, num_epochs=1):
+#     opt = Adam(net.parameters(), lr=0.01)
+
+#     # empty lists for storage
+#     losses = []
+#     epochs = []
+
+    
+#     for epoch in range(num_epochs):
+#         print(f'Epoch {epoch} --> ', end="\t")
+#         N = len(loader)
+#         for i, (x, y) in enumerate(loader):
+#             # Update the weights of the network
+#             opt.zero_grad()               # reset gradients 
+
+#             loss_value = loss(net(x.unsqueeze(dim=0)), y)  # forwarding
+
+#             loss_value.backward()         # backwarding
+#             opt.step() 
+#             # Store training data
+#             epochs.append(epoch+i/N)
+#             losses.append(loss_value.item())
+#         # print('loss: {:.2}'.format(loss_value.item()), end="\n") # wrong just the last
+#     return epochs, losses
