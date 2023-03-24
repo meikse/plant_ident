@@ -17,7 +17,7 @@ python 3.10.6 or higher is used as well as the following external modules
 ## motivation
 
 The motivation is to feed data from a linear continuous state-space (ss) system as a plant through a pipeline with a neural network included.
-No output-matrix is considered for the ss-system.
+output-matrix is an eye matrix for the ss-system.
 This pipeline receives input as well as output data from the real ss-system which shall be analyzed.
 Due to training of the neural network, the ss shall be identified without any further information about the physical system dynamics (black box approach).
 
@@ -27,12 +27,11 @@ For testing purposes, `generator.py` creates input data for a possible ss-system
 Functions and classes are stored in the `util.py` file.
 
 
-
 ```
-                u       ┌────────────┐        ┌────────────┐         │ x_0
+                u(t)    ┌────────────┐        ┌────────────┐         │ x(t)
                 ───────►│            │        │            │         ▼
-                        │  neural    │ x_dot  │ integrator │ x    ┌─────┐     y = x_prev
-                x_prev  │  network   ├───────►│            ├─────►│ sum ├─────►
+                        │  neural    │        │ integrator │      ┌─────┐     x(t+1)
+                x(t)    │  network   ├───────►│            ├─────►│ sum ├─────►
                 ───────►│            │        │            │      └─────┘
                         └────────────┘        └────────────┘
 ```
