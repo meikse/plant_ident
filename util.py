@@ -1,12 +1,36 @@
 #!/usr/bin/python3
 
-from csv import DictReader, writer
-
 import torch
 from torch.nn import Module, Sequential, Linear, Sigmoid
 
 from random import random 
 from csv import writer, reader
+
+
+def export_csv(data, name = "input.csv"):
+    ''' exports the generated input "data" into a csv file.
+    :name: name of file
+    :data: data [[x,y],...]
+    '''
+    with open(name,"w", newline="") as file:
+        csvfile = writer(file, delimiter=",")
+        for i in data:
+            csvfile.writerow(i)
+
+
+def import_csv(name = "input.csv"):
+    ''' exports the generated input "data" into a csv file.
+    :name: name of file
+    :data: data [[x,y],...]
+    '''
+    data = []
+    with open(name,"r") as file:
+        csv_reader = reader(file, delimiter=",")
+        for i in csv_reader:
+            i = [float(i) for i in i]
+            data.append(i)
+    return data
+
 
 class InputGenerator:
     '''Generator to create (smooth) input data for a potential plant from random
@@ -82,104 +106,91 @@ class InputGenerator:
         self.data =[[self.data[i][0],storage[i]] for i in range(len(self.data))]
 
 
-def export_csv(data, name = "input.csv"):
-    ''' exports the generated input "data" into a csv file.
-    :name: name of file
-    :data: data [[x,y],...]
-    '''
-    with open(name,"w", newline="") as file:
-        csvfile = writer(file, delimiter=",")
-        for i in data:
-            csvfile.writerow(i)
-
-
-def import_csv(name = "input.csv"):
-    ''' exports the generated input "data" into a csv file.
-    :name: name of file
-    :data: data [[x,y],...]
-    '''
-    data = []
-    with open(name,"r") as file:
-        csv_reader = reader(file, delimiter=",")
-        for i in csv_reader:
-            i = [float(i) for i in i]
-            data.append(i)
-    return data
-
-# -----------------------------------------------------------------------------
-
-from torch.nn import Module, Sequential, Linear, Sigmoid
-
-class Logistic(Module):
+class Model(Module):
    
-    def __init__(self, n_x, n_u, n_feat=[40,40,40]):
+    def __init__(self, n_x, n_u):
         '''
         n_u: number of inputs
         n_x: number of states 
         n_fest: number of neurons per layer of the state mapping function
         '''
-        super(Logistic, self).__init__()
-        self.net = Sequential(
-            Linear(n_x + n_u, n_feat[0]),  # 2 states, 1 input
-            Sigmoid(),
-            Linear(n_feat[0], n_feat[1]),
-            Sigmoid(),
-            Linear(n_feat[1], n_feat[2]),
-            Sigmoid(),
-            Linear(n_feat[2], n_x),         # n_x since states=output
-            )
+        super(Model, self).__init__()
+        n = 40
+        self.net = Sequential(Linear(n_x + n_u, n),  
+                              Sigmoid(),
+                              Linear(n,n),
+                              Sigmoid(),
+                              Linear(n,n),
+                              Sigmoid(),
+                              Linear(n, n_x),        # n_x since states=output
+                              )
     
+
     def forward(self, X,U):
-        '''is not called directly, optimizer is calling it implicitly'''
+        '''is not called directly, optimizer is calling it implicitly
+        :X: state values in form of a Matrix
+        :U: input values in form of a Matrix
+        :return: evaluation of the net
+        '''
         # concatenate inputs and stated for passing them once into the net
         XU = torch.cat((X,U),-1)
-        # i guess it does not matter passing them concatenated into the net
-        DX = self.net(XU)
+        # it does not matter passing them concatenated into the net
+        return self.net(XU)
 
-        return DX
-    
 
-class INN:
-    
-    def __init__(self, nn_model):
-        # pass net to this class
-        self.nn_model = nn_model
+def pipe(model, X, U, dt):
+    ''' pipe for the block diagram:
 
-    def INN_est(self, X_est,U,dt):
+        x_dot_int = x_0 + int(N_f(x,u),dt)
+        x = x_dot_int       # next iteration step
 
-        # pass u and x_head into N_f (Fig. 1) dot_x_head 
-        X_est_torch = self.nn_model(X_est.float(),U.float())
-        # integrate via cumulative sum of all previous estimated x_i
-        X_sum = torch.cumsum(X_est_torch, dim=0) # integrator
-        # first row will be extracted
-        # x0=X_est[0,:]
-        x0=X_est[0]
-        # adding initial state -> x_0
-        xdot_int=torch.add(x0,dt*X_sum)
+    :model: neural network
+    :X      states
+    :U:     initial state, X[0]
+    :dt:    time constant (integer)
 
-        return xdot_int
+    returns integrated states provided by the neural network
+    '''
+    # pass u and x_head into N_f (Fig. 1) dot_x_head 
+    xhead_i = model(X.float(),U.float())
+    # integrate via cumulative sum of all previous estimated x_i
+    X_sum = torch.cumsum(xhead_i, dim=0) # integrator
+    # adding initial state -> x0
+    xdot_int=torch.add(X[0,:], dt*X_sum)
 
-# def fit(loader, net, loss, num_epochs=1):
-#     opt = Adam(net.parameters(), lr=0.01)
+    return xdot_int
 
-#     # empty lists for storage
-#     losses = []
-#     epochs = []
 
-    
-#     for epoch in range(num_epochs):
-#         print(f'Epoch {epoch} --> ', end="\t")
-#         N = len(loader)
-#         for i, (x, y) in enumerate(loader):
-#             # Update the weights of the network
-#             opt.zero_grad()               # reset gradients 
+def evaluate(model, X0, n_x, U, dt):
+    ''' evaluate trained model discretely
 
-#             loss_value = loss(net(x.unsqueeze(dim=0)), y)  # forwarding
+    :X0:  row vector of initial states
+    :n_x: number of states 
+    :us:  is a vector of inputs
+    :dt:  size of time step 
 
-#             loss_value.backward()         # backwarding
-#             opt.step() 
-#             # Store training data
-#             epochs.append(epoch+i/N)
-#             losses.append(loss_value.item())
-#         # print('loss: {:.2}'.format(loss_value.item()), end="\n") # wrong just the last
-#     return epochs, losses
+    returns output from the feeded neural network + integrator
+    '''
+    X_list=X0
+    X_sim=torch.zeros((U.shape[0],n_x))          # matrix 
+    x_sum=X_list                                 # vector
+    for i, val in enumerate(U):
+        # previous state, new input 
+        x_p1 = model(X_list.float(),val.float()) # vector
+        # time constant * current state + previous output
+        x_sum = dt * x_p1 + x_sum
+        # update initial state for the next loop
+        X_list=x_sum
+        # save state in matrix
+        X_sim[i,:]=X_list
+    return X_sim
+
+
+def RMSE(y_sim, y_val):
+    ''' root-mean-square error
+    :y_sim:  simulated vector
+    :y_val:  comparison vector
+    '''
+    error = y_sim - y_val
+    N = y_sim.shape[0]
+    return torch.sqrt(((1/N)*torch.sum(error**2)))

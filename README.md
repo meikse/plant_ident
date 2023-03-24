@@ -1,36 +1,50 @@
-# plant_ident 
-crude Neural Network approach for a dynamical model identification
+# plant_ident (devel)
 
-# sources
+control system plant identification through the help of a Neural Network.
 
-this code is inspired by the work of the following source:
+(still in development!)
 
-https://github.com/bmavkov/INN-for-Identification
+## prerequisites
 
-using the generic tutorial from pyTorch:
+python 3.10.6 or higher is used as well as the following external modules
 
-https://pytorch.org/tutorials/beginner/nn_tutorial.html
+| module                                                             | version |
+|--------------------------------------------------------------------|---------|
+| [pytorch](https://github.com/pytorch)                              | 1.13.1  |
+| [python-control](https://github.com/python-control/python-control) | 0.9.2   |
+| [matplotlib](https://github.com/matplotlib/matplotlib)             | 3.5.1   |
 
-### notes
+## motivation
 
-main part for machine learning is the back-propagation (`backward()`)
+The motivation is to feed data from a linear continuous state-space (ss) system as a plant through a pipeline with a neural network included.
+No output-matrix is considered for the ss-system.
+This pipeline receives input as well as output data from the real ss-system which shall be analyzed.
+Due to training of the neural network, the ss shall be identified without any further information about the physical system dynamics (black box approach).
 
-it is a method of its parent class, the loss-function
+## principle 
 
-in this case the loss-function is not a pre build loss function from pytorch, but rather a self defined cost-function.
+For testing purposes, `generator.py` creates input data for a possible ss-system and also generates output data in respect to it.
+Functions and classes are stored in the `util.py` file.
 
-1. make it possible for pytorch to conduct `.backward()` with it
-(as far as i remember the gradients due to its derivative will be calculated theline backwards. Thus the loss does not has to fulfill any criteria besides being a rational number)
 
-The cost function shall penalise the error between the state and its derivative.
 
-xhat_i is the (model + integrator) output 
+```
+                u       ┌────────────┐        ┌────────────┐         │ x_0
+                ───────►│            │        │            │         ▼
+                        │  neural    │ x_dot  │ integrator │ x    ┌─────┐     y = x_prev
+                x_prev  │  network   ├───────►│            ├─────►│ sum ├─────►
+                ───────►│            │        │            │      └─────┘
+                        └────────────┘        └────────────┘
+```
+
+## sources
+
+* https://ieeexplore.ieee.org/abstract/document/9094226
+* https://pytorch.org/tutorials/beginner/nn_tutorial.html
 
 
 # TODO
 
-1. generate laggy (träges) noise signal, to simulate possible real input 
-done
-2. implement generator as class, and output it via a known ss system as reference for the nn
-.. then you should have train and test data, which can be generated with the input generator and the ss output
-
+1. prepare and overview train and test data, assuming this causes the bad train results
+2. better logistic for the dataset, maybe call it with keys
+3. illustrate plots in a few figures only
