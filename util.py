@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+from pathlib import Path
+
 import torch
 from torch.nn import Module, Sequential, Linear, Sigmoid
 
@@ -7,7 +9,7 @@ from random import random
 from csv import writer, reader
 
 
-def export_csv(data, name = "input.csv"):
+def export_csv(data, name = "output.csv"):
     ''' exports the generated input "data" into a csv file.
     :name: name of file
     :data: data [[x,y],...]
@@ -18,17 +20,21 @@ def export_csv(data, name = "input.csv"):
             csvfile.writerow(i)
 
 
-def import_csv(name = "input.csv"):
+def import_csv(path = ".", name = "input.csv"):
     ''' exports the generated input "data" into a csv file.
     :name: name of file
     :data: data [[x,y],...]
     '''
+    name = (Path(path) / name).as_posix()
     data = []
     with open(name,"r") as file:
         csv_reader = reader(file, delimiter=",")
+        i = iter(csv_reader)
+        header = next(csv_reader)
         for i in csv_reader:
             i = [float(i) for i in i]
             data.append(i)
+        data.insert(0,header)
     return data
 
 

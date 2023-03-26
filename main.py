@@ -1,78 +1,74 @@
 #!/usr/bin/python3
 
 from util import *
-from pathlib import Path
 
 from torch import tensor
 
-import matplotlib.pyplot as plt
-
+import matplotlib.pyplot as plt; color = "red"
 import logging
 logging.basicConfig(encoding='utf-8', level=logging.INFO)
 
 ## load data
 
-PATH = Path(".")
-FILENAME = "train.csv"
-name = (PATH / FILENAME).as_posix()
-train_data = import_csv(name = name)
+# filenames = ["train.csv", "test.csv"]
+# data = {name.split(".")[0] : import_csv(path = ".", name = name)
 
-FILENAME = "test.csv"
-name = (PATH / FILENAME).as_posix()
-test_data = import_csv(name = name)
+path = "."
+train_data = import_csv(path = path, name = "train.csv")
+test_data = import_csv(path = path, name = "test.csv")
 
-## map dict -> tensor
+# for i in train[0]
+train_raw = {param : tensor([i[n] for i in train_data[1:]]) 
+         for n, param in enumerate(train_data[0][:3])}
+test_raw = {param : tensor([i[n] for i in test_data[1:]]) 
+        for n, param in enumerate(test_data[0][:3])}
 
-# T = tensor([i[0] for i in train_data])  # sample data
-us_raw = tensor([i[1] for i in train_data])
-ys_raw = tensor([i[2] for i in train_data])
-ut_raw = tensor([i[1] for i in test_data] )
-yt_raw = tensor([i[2] for i in test_data] )
+# a = extract(data.get("train"), 1).unsqueeze(dim=0).t()
 
 ## plot data
 
-fig1, ax1 = plt.subplots(figsize=(16,8))
-plt.plot(us_raw, label="input  (train)")
-plt.plot(ys_raw, label="output (train)")
-plt.legend()
+fig1, ax1 = plt.subplots(2,1,figsize=(16,12))
+ax1[0].set_title("train data", color=color)
+ax1[0].plot(train_raw.get("T"),train_raw.get("u"), label="u (raw)")
+ax1[0].plot(train_raw.get("T"),train_raw.get("y"), label="y (raw)")
+ax1[1].set_title("test data", color=color)
+ax1[1].plot(test_raw.get("T"),test_raw.get("u"), label="u (raw)")
+ax1[1].plot(test_raw.get("T"),test_raw.get("y"), label="y (raw)")
+for ax in ax1:
+    ax.legend()
+    ax.grid()
+    ax.tick_params(colors=color)
 plt.close(fig1)
 
-fig2, ax2 = plt.subplots(figsize=(16,8))
-plt.plot(ut_raw, label="input  (test)")
-plt.plot(yt_raw, label="output (test)")
-plt.legend()
-plt.close(fig2)
+## normalize data
+
+def normalize(x):
+    # normal = (x - x.mean()) / x.std(unbiased=False)
+    normal = x / x.std(unbiased=False)
+    return normal.unsqueeze(dim=0).t()
+
+train = dict(map(lambda d: (d[0], normalize(d[1])), train_raw.items()))
+test =  dict(map(lambda d: (d[0], normalize(d[1])), test_raw.items()))
+
+## plot data
+
+ax1[0].plot(train.get("u"), label="u (norm)")
+ax1[0].plot(train.get("y"), label="y (norm)")
+ax1[1].plot(test.get("u"), label="u (norm)")
+ax1[1].plot(test.get("y"), label="y (norm)")
+for ax in ax1:
+    ax.legend()
 
 ## prepare data
-# no offset from mean value 
-us = us_raw / us_raw.std(unbiased=False)
-ys = ys_raw / ys_raw.std(unbiased=False)
-ut = ut_raw / ut_raw.std(unbiased=False) 
-yt = yt_raw / yt_raw.std(unbiased=False)
-us = us.unsqueeze(dim=0).t()
-ys = ys.unsqueeze(dim=0).t()
-ut = ut.unsqueeze(dim=0).t()
-yt = yt.unsqueeze(dim=0).t()
 
-## plot data
-
-fig3, ax3 = plt.subplots(figsize=(16,8))
-plt.plot(us_raw, label="raw")
-plt.plot(us, label="cleaned")
-plt.legend()
-plt.close(fig1)
-
-fig4, ax4 = plt.subplots(figsize=(16,8))
-plt.plot(ys_raw, label="raw")
-plt.plot(ys, label="cleaned")
-plt.legend()
-plt.close(fig2)
+from torch.utils.data import TensorDataset, DataLoader
+train_ds = TensorDataset(train.get("u"),train.get("y"))
+train_dl = DataLoader(train_ds, batch_size=len(train_ds))
 
 ## init model
 
-n_x = 2
-n_u = 1
-model = Model(n_x=n_x, n_u=n_u)
+(nu, nx, ny) = (int(i) for i in train_data[1][3:])
+model = Model(n_x=nx, n_u=nu)
 
 ## prepare input vector
 

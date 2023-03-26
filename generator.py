@@ -12,24 +12,26 @@ def main():
         input_data = input.get_data()
     
         u = [i[1] for i in input_data]
-        T = [i for i in range(len(u))]
+        T = list(range(len(u)))
     
         # # format: s^n ... + s + 1
         # nom=[1]
         # den=[24,4,1]
         # g = tf(nom, den)
 
-        # choose a stable one, this one is unstable ! TODO
         a = [[-1/6, -1/24],[1, 0]]
         b = [[1],[0]]
         c = [1, 0]
-        # c = [0, 1]
-        # c = [0, 1/24]
         g = ss(a,b,c,0)
-
         T,y = forced_response(g,T=T, U=u)
 
-        output_data=[[T[i],u[i],y[i]] for i in range(len(T))]
+        nu = sum([1 for i in b if i[0] != 0])
+        nx = len(a)
+        ny = sum([1 for i in c if i != 0])
+
+        output_data=[[T[i+1],u[i+1],y[i+1]] for i in range(len(T)-1)]
+        output_data.insert(0,["T","u","y","nu","nx","ny"])
+        output_data.insert(1,[T[0],u[0],y[0],nu,nx,ny])
         export_csv(output_data, "{}.csv".format(name))
         
 
