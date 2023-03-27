@@ -3,13 +3,12 @@
 from pathlib import Path
 
 import torch
-from torch.nn import Module, Sequential, Linear, Sigmoid
 
 from random import random 
 from csv import writer, reader
 
 
-def export_csv(data, name = "output.csv"):
+def export_csv(data, name = "output.csv"): # obsolete, update to import_csv TODO
     ''' exports the generated input "data" into a csv file.
     :name: name of file
     :data: data [[x,y],...]
@@ -111,6 +110,7 @@ class InputGenerator:
             storage.append(y)
         self.data =[[self.data[i][0],storage[i]] for i in range(len(self.data))]
 
+from torch.nn import Module, Sequential, Linear, Sigmoid, ReLU
 
 class Model(Module):
    
@@ -124,10 +124,12 @@ class Model(Module):
         n = 40
         self.net = Sequential(Linear(n_x + n_u, n),  
                               Sigmoid(),
-                              Linear(n,n),
+                              # Linear(n,n),
+                              torch.nn.ELU(),
                               Sigmoid(),
-                              Linear(n,n),
+                              torch.nn.ELU(),
                               Sigmoid(),
+                              ReLU(),
                               Linear(n, n_x),        # n_x since states=output
                               )
     
@@ -148,7 +150,7 @@ def pipe(model, X, U, dt):
     ''' pipe for the block diagram:
 
         x_dot_int = x_0 + int(N_f(x,u),dt)
-        x = x_dot_int       # next iteration step
+        x = x_dot_int       # next iteration step (loop)
 
     :model: neural network
     :X      states
@@ -163,7 +165,6 @@ def pipe(model, X, U, dt):
     X_sum = torch.cumsum(xhead_i, dim=0) # integrator
     # adding initial state -> x0
     xdot_int=torch.add(X[0,:], dt*X_sum)
-
     return xdot_int
 
 
@@ -190,6 +191,20 @@ def evaluate(model, X0, n_x, U, dt):
         # save state in matrix
         X_sim[i,:]=X_list
     return X_sim
+
+def normalize(x):
+    ''' normalizes tensor x and forms it to a vector with shape (len(x),1)
+    :x: torch tensor
+    '''
+    normal = (x - x.mean()) / x.std(unbiased=False)
+    return normal.unsqueeze(dim=0).t()
+
+def denormalize(x):
+    ''' denormalizes tensor x and forms it to a vector with shape (len(x),1)
+    :x: torch tensor
+    '''
+    normal = (x * x.std(unbiased=False)) + x.mean()
+    return normal #.unsqueeze(dim=0).t()
 
 
 def RMSE(y_sim, y_val):
