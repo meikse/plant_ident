@@ -118,18 +118,18 @@ class Model(Module):
         '''
         n_u: number of inputs
         n_x: number of states 
-        n_fest: number of neurons per layer of the state mapping function
         '''
         super(Model, self).__init__()
         n = 40
         self.net = Sequential(Linear(n_x + n_u, n),  
                               Sigmoid(),
-                              # Linear(n,n),
-                              torch.nn.ELU(),
+                              Linear(n,n),
+                              # torch.nn.ELU(),
                               Sigmoid(),
-                              torch.nn.ELU(),
+                              Linear(n,n),
+                              # torch.nn.ELU(),
                               Sigmoid(),
-                              ReLU(),
+                              # ReLU(),
                               Linear(n, n_x),        # n_x since states=output
                               )
     
