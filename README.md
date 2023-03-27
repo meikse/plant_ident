@@ -62,3 +62,4 @@ Those notes are resulting from own experiences, which are not derived from a spe
 1. Find and use real input and output data to ensure arbitrariness\
 or 
 2. Enlarge the amount of generated data (which slows down training)
+3. Why not raw data at the comparison at the end in `main.py` ?
