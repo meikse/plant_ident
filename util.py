@@ -8,7 +8,7 @@ from random import random
 from csv import writer, reader
 
 
-def export_csv(data, name = "output.csv"): # obsolete, update to import_csv TODO
+def export_csv(data, name): # obsolete, update to import_csv TODO
     ''' exports the generated input "data" into a csv file.
     :name: name of file
     :data: data [[x,y],...]
@@ -19,7 +19,7 @@ def export_csv(data, name = "output.csv"): # obsolete, update to import_csv TODO
             csvfile.writerow(i)
 
 
-def import_csv(path = ".", name = "input.csv"):
+def import_csv(name, path = "."):
     ''' exports the generated input "data" into a csv file.
     :name: name of file
     :data: data [[x,y],...]
