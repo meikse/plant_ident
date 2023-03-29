@@ -55,6 +55,8 @@ Those notes are resulting from own experiences, which are not derived from a spe
 
 > more complexity of the input data provided for the training results in better robustness for the model
 
+For more data the DataLoader class provided from pytorch will be used.
+With it the dataset can be truncated into smaller batches for faster trainingr.
 
 ## TODO
 
