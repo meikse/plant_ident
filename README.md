@@ -42,6 +42,15 @@ Functions and classes are stored in the `util.py` file.
                         └────────────┘        └────────────┘
 ```
 
+## performance
+
+![loss](./images/nn_inv.png)
+```
+steps = 15000
+lr = 1e-4
+```
+net can be reviewed in [util.py](./util.py)
+
 ## sources
 
 :scroll: https://ieeexplore.ieee.org/abstract/document/9094226 \

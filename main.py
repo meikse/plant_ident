@@ -5,15 +5,16 @@ from util import *
 from torch import tensor
 # from torch.utils.data import TensorDataset, DataLoader
 
-import matplotlib.pyplot as plt; color = "red"
-plt.style.use('dark_background')
+import matplotlib.pyplot as plt 
+color = "black"
+# plt.style.use('dark_background')
 
 import logging
 logging.basicConfig(encoding='utf-8', level=logging.INFO)
 
 ## load data
 
-path = "./data"
+path = "./data/CascadedTanks/"
 # import system data and information
 train_data = import_csv(path = path, name = "train.csv")
 test_data = import_csv(path = path, name = "test.csv")
@@ -85,7 +86,7 @@ X0=X[0,:]
 
 ## init optimizer
 
-steps = 10000
+steps = 15000
 lr = 1e-4
 dt = 4 # Ts
 
@@ -118,7 +119,7 @@ def fit():
             # next step 
             optimizer.step()
     
-
+fit()
 ## evaluate
 
 for data in [train, test]:
@@ -138,10 +139,10 @@ for data in [train, test]:
 fig2, ax2 = plt.subplots(2,1,figsize=(16,12))
 ax2[0].set_title("train data, RMSe: {:.2}".format(train["error"]), color=color)
 ax2[0].plot(train["y_sim"].detach(), 'r', label='y (sim)')
-ax2[0].plot(train["y_norm"], 'w', label='y (norm)') #why here not train_raw? TODO
+ax2[0].plot(train["y_norm"], 'k', label='y (norm)') #why here not train_raw? TODO
 ax2[1].set_title("test data, RMSe: {:.2}".format(test["error"]), color=color)
 ax2[1].plot(test["y_sim"].detach(), 'r', label='y (sim)')
-ax2[1].plot(test["y_norm"], 'w', label='y (norm)')  #why here not test raw ? TODO
+ax2[1].plot(test["y_norm"], 'k', label='y (norm)')  #why here not test raw ? TODO
 for ax in ax2:
     ax.legend()
     ax.grid()
@@ -150,4 +151,4 @@ for ax in ax2:
 
 ##
 
-# plt.show()
+plt.show()
